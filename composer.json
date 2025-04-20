@@ -1,0 +1,16 @@
+{
+    "name": "dwoodard/a2a",
+    "description": "A2A protocol support for Laravel agents",
+    "autoload": {
+        "psr-4": {
+            "Dwoodard\\A2A\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Dwoodard\\A2A\\LaravelAgentServiceProvider"
+            ]
+        }
+    }
+}
