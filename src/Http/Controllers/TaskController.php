@@ -4,6 +4,7 @@ namespace Dwoodard\A2A\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -12,6 +13,8 @@ class TaskController extends Controller
         $rpc = $request->json();
 
         if ($rpc->get('jsonrpc') !== '2.0' || ! $rpc->get('method')) {
+            Log::warning('A2A Invalid Request', ['request' => $rpc->all()]);
+
             return response()->json([
                 'jsonrpc' => '2.0',
                 'error' => ['code' => -32600, 'message' => 'Invalid Request'],
@@ -23,6 +26,8 @@ class TaskController extends Controller
         $method = $rpc->get('method');
 
         if (! isset($handlers[$method])) {
+            Log::warning('A2A Method Not Found', ['method' => $method]);
+
             return response()->json([
                 'jsonrpc' => '2.0',
                 'error' => ['code' => -32601, 'message' => 'Method not found'],
@@ -30,8 +35,18 @@ class TaskController extends Controller
             ], 404);
         }
 
-        $handler = app($handlers[$method]);
-        $result = $handler($rpc->get('params', []));
+        try {
+            $handler = app($handlers[$method]);
+            $result = $handler($rpc->get('params', []));
+        } catch (\Throwable $e) {
+            Log::error('A2A Handler Error', ['exception' => $e]);
+
+            return response()->json([
+                'jsonrpc' => '2.0',
+                'error' => ['code' => -32603, 'message' => 'Internal error'],
+                'id' => $rpc->get('id'),
+            ], 500);
+        }
 
         return response()->json([
             'jsonrpc' => '2.0',
